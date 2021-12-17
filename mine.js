@@ -21,6 +21,7 @@ const CODE = {
 
 let data;
 
+//지뢰심기 함수
 function insertMine() {
     const makeMine = Array(row * column).fill().map((arr, i) => {
         return i;
@@ -54,15 +55,15 @@ function insertMine() {
     }
     return data;
 };
+//지뢰심기 함수 끝
 makeTable()
-function flagClick(event) {
+
+//우클릭 함수
+function flagRightClick(event) {
     event.preventDefault();//우클릭했을때 나오는 메뉴 동작x
     const tdTarget = event.target;//td
     const rowIndex = tdTarget.parentNode.rowIndex;//가로
-    console.dir(tdTarget);
-    console.log(tdTarget.parentNode);
     const columnIndex = tdTarget.cellIndex;
-    console.log(rowIndex);
     const columnData = data[rowIndex][columnIndex];
     if (columnData === CODE.NORMAL) {
         data[rowIndex][columnIndex] = CODE.QUESTION;
@@ -96,7 +97,54 @@ function flagClick(event) {
         tdTarget.style.backgroundColor = "#888"
     }
 };
+//우클릭 함수끝
 
+//근처 마인갯수 세기 함수
+function countMine(rowIndex, columnIndex) {
+    const mine = [CODE.MINE, CODE.FLAG_MINE, CODE.QUESTION_MINE];
+    let i = 0;
+    //?.의뜻은 .앞에부분이 true이면 뒤에거를 실행하라는뜻 error이면 아예실행이 안되서 error가 안나게한다.   
+    mine.includes(data[rowIndex - 1]?.[columnIndex - 1]) && i++;
+    //클릭한것의 위에서 왼쪽이 있으면 i++없으면 실행x &&가 왼쪽이 true이면 오른쪽도 실행하라는 뜻
+    mine.includes(data[rowIndex - 1]?.[columnIndex]) && i++;
+    mine.includes(data[rowIndex - 1]?.[columnIndex + 1]) && i++;
+    mine.includes(data[rowIndex]?.[columnIndex - 1]) && i++;
+    mine.includes(data[rowIndex]?.[columnIndex + 1]) && i++;
+    mine.includes(data[rowIndex + 1]?.[columnIndex - 1]) && i++;
+    mine.includes(data[rowIndex + 1]?.[columnIndex]) && i++;
+    mine.includes(data[rowIndex + 1]?.[columnIndex + 1]) && i++;
+    return i;
+    console.log(i);
+};
+//근처 마인갯수 세기 함수끝
+
+//좌클릭 함수
+function leftClick(event) {
+    const tdTarget = event.target;
+    const rowIndex = tdTarget.parentNode.rowIndex;//가로
+    const columnIndex = tdTarget.cellIndex;
+    const columnData = data[rowIndex][columnIndex];
+    if (columnData === CODE.NORMAL) {
+        const count = countMine(rowIndex, columnIndex);//지뢰가 근처에 몇개있는지.
+        //countMine에 몇번째칸 몇번째 줄인지 정보는 넘김 rowIndex, columnIndex
+        tdTarget.innerText = count || "";//근처에 지뢰가 있으면 count없으면 공백
+        //0을 표기하고 싶으면 ||대신에 ??사용
+        tdTarget.style.backgroundColor = "white"
+        data[rowIndex][columnIndex] = count;
+    } else if (columnData === CODE.MINE)//마인이 있으면 
+    {
+        alert("꽝 다음기회에");
+        document.body.removeEventListener("contextmenu", flagRightClick);
+        document.body.removeEventListener("click", leftClick);
+        window.location.reload()
+    }//물음표나,깃발일경우에는 아무동작도 x
+    else if (columnIndex === false || rowIndex === false) {
+        document.body.removeEventListener("click", leftClick);
+    };
+};
+//좌클릭 함수 끝
+
+//테이블 그리기 함수
 function makeTable() {
     data = insertMine();
     data.forEach((row) => {
@@ -110,6 +158,8 @@ function makeTable() {
         });
         body.appendChild(tr);
         //document.body.insertBefore(tr, div); 하면에러남 table안에 tr을 만든게 아니라서
-        document.body.addEventListener("contextmenu", flagClick)
+        document.body.addEventListener("contextmenu", flagRightClick);
+        document.body.addEventListener("click", leftClick);
     })
 };
+//테이블 그리기 함수끝
